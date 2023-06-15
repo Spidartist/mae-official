@@ -32,23 +32,23 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
             del self.norm  # remove the original norm
 
     def forward_features(self, x):
-        B = x.shape[0]
-        x = self.patch_embed(x)
+        B = x.shape[0]               
+        x = self.patch_embed(x)      # (B, num_patches, patch_dim)
 
-        cls_tokens = self.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
-        x = torch.cat((cls_tokens, x), dim=1)
-        x = x + self.pos_embed
+        cls_tokens = self.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks  
+        x = torch.cat((cls_tokens, x), dim=1)  # (B, num_patches + 1, patch_dim)
+        x = x + self.pos_embed                 # (B, num_patches + 1, patch_dim)
         x = self.pos_drop(x)
 
         for blk in self.blocks:
-            x = blk(x)
+            x = blk(x)                 # (B, num_patches + 1, patch_dim)
 
         if self.global_pool:
             x = x[:, 1:, :].mean(dim=1)  # global pool without cls token
             outcome = self.fc_norm(x)
         else:
-            x = self.norm(x)
-            outcome = x[:, 0]
+            x = self.norm(x)       # (B, num_patches + 1, patch_dim)
+            outcome = x[:, 0]      # (B, 1, patch_dim)
 
         return outcome
 
