@@ -136,8 +136,8 @@ class MaskedAutoencoderViT(nn.Module):
         ids_restore = torch.argsort(ids_shuffle, dim=1)
 
         # keep the first subset
-        ids_keep = ids_shuffle[:, :len_keep]
-        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D))
+        ids_keep = ids_shuffle[:, :len_keep]    # (N, len_keep)
+        x_masked = torch.gather(x, dim=1, index=ids_keep.unsqueeze(-1).repeat(1, 1, D)) # (N, len_keep, D)
 
         # generate the binary mask: 0 is keep, 1 is remove
         mask = torch.ones([N, L], device=x.device)
@@ -149,7 +149,7 @@ class MaskedAutoencoderViT(nn.Module):
 
     def forward_encoder(self, x, mask_ratio):
         # embed patches
-        x = self.patch_embed(x)
+        x = self.patch_embed(x)         # (B, num_patches, patch_dim) 
 
         # add pos embed w/o cls token
         x = x + self.pos_embed[:, 1:, :]
