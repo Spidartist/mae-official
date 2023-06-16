@@ -65,11 +65,11 @@ class MaskedAutoencoderViT(nn.Module):
     def initialize_weights(self):
         # initialization
         # initialize (and freeze) pos_embed by sin-cos embedding
-        pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.patch_embed.num_patches**.5), cls_token=True)
-        self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
+        pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.patch_embed.num_patches**.5), cls_token=True)  # (num_patches + 1, patch_dim)
+        self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))  # (1, num_patches + 1, patch_dim)
 
-        decoder_pos_embed = get_2d_sincos_pos_embed(self.decoder_pos_embed.shape[-1], int(self.patch_embed.num_patches**.5), cls_token=True)
-        self.decoder_pos_embed.data.copy_(torch.from_numpy(decoder_pos_embed).float().unsqueeze(0))
+        decoder_pos_embed = get_2d_sincos_pos_embed(self.decoder_pos_embed.shape[-1], int(self.patch_embed.num_patches**.5), cls_token=True) # (num_patches + 1, patch_dim)
+        self.decoder_pos_embed.data.copy_(torch.from_numpy(decoder_pos_embed).float().unsqueeze(0)) # (1, num_patches + 1, patch_dim)
 
         # initialize patch_embed like nn.Linear (instead of nn.Conv2d)
         w = self.patch_embed.proj.weight.data
@@ -101,9 +101,9 @@ class MaskedAutoencoderViT(nn.Module):
         assert imgs.shape[2] == imgs.shape[3] and imgs.shape[2] % p == 0
 
         h = w = imgs.shape[2] // p
-        x = imgs.reshape(shape=(imgs.shape[0], 3, h, p, w, p))
-        x = torch.einsum('nchpwq->nhwpqc', x)
-        x = x.reshape(shape=(imgs.shape[0], h * w, p**2 * 3))
+        x = imgs.reshape(shape=(imgs.shape[0], 3, h, p, w, p))  # (B, 3, h, p, w, p)
+        x = torch.einsum('nchpwq->nhwpqc', x)                   # (B, h, w, p, p, 3)
+        x = x.reshape(shape=(imgs.shape[0], h * w, p**2 * 3))   # (B, h*w, p*p*3)
         return x
 
     def unpatchify(self, x):
@@ -112,12 +112,12 @@ class MaskedAutoencoderViT(nn.Module):
         imgs: (N, 3, H, W)
         """
         p = self.patch_embed.patch_size[0]
-        h = w = int(x.shape[1]**.5)
+        h = w = int(x.shape[1]**.5)     
         assert h * w == x.shape[1]
         
-        x = x.reshape(shape=(x.shape[0], h, w, p, p, 3))
-        x = torch.einsum('nhwpqc->nchpwq', x)
-        imgs = x.reshape(shape=(x.shape[0], 3, h * p, h * p))
+        x = x.reshape(shape=(x.shape[0], h, w, p, p, 3))  # (B, h, w, p, p, 3)
+        x = torch.einsum('nhwpqc->nchpwq', x)             # (B, 3, h, p, w, p)
+        imgs = x.reshape(shape=(x.shape[0], 3, h * p, h * p)) # (B, 3, H, W)
         return imgs
 
     def random_masking(self, x, mask_ratio):
