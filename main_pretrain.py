@@ -22,7 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 from AFLW.data import AFLWDataset
 import timm
 
-assert timm.__version__ == "0.3.2"  # version check
+# assert timm.__version__ == "0.3.2"  # version check
 import timm.optim.optim_factory as optim_factory
 
 import util.misc as misc
